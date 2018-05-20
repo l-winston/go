@@ -7,7 +7,6 @@ public class Game {
 	boolean p1Move = true;
 	boolean[][] checked;
 	byte[][] prev;
-	byte[][] prev2;
 	int turn;
 
 	public static void main(String[] args) throws IOException {
@@ -26,7 +25,6 @@ public class Game {
 		board = new byte[h][w];
 		turn = 0;
 		prev = new byte[h][w];
-		prev2 = new byte[h][w];
 	}
 
 	public boolean arrayEquals(byte[][] ar1, byte[][] ar2) {
@@ -42,8 +40,16 @@ public class Game {
 	}
 
 	public boolean ko(int i, int j) {
-		if (turn >= 2 && arrayEquals(prev2, board))
+		if (turn < 2)
+			return false;
+		byte[][] save = arrayCopy(board);
+		board[i][j] = (byte) (p1Move ? 1 : 2);
+		check(i, j);
+		if(arrayEquals(prev, board)){
+			board = save;
 			return true;
+		}
+		board = save;
 		return false;
 	}
 
@@ -141,7 +147,6 @@ public class Game {
 	public boolean move(int i, int j) {
 		if (isLegal(i, j)) {
 			p1Move ^= true;
-			prev2 = arrayCopy(prev);
 			prev = arrayCopy(board);
 			board[i][j] = (byte) (!p1Move ? 1 : 2);
 			turn++;
@@ -155,11 +160,9 @@ public class Game {
 
 	public void pass() {
 		p1Move ^= true;
-		prev2 = arrayCopy(prev);
 		prev = arrayCopy(board);
 		turn++;
-		if (arrayEquals(board, prev2))
-			System.out.println("game over");
+		
 	}
 
 	public boolean isEmpty(int i, int j) {
