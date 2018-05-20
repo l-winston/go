@@ -8,6 +8,7 @@ public class Game {
 	boolean[][] checked;
 	byte[][] prev;
 	int turn;
+	boolean lastPass = false;
 
 	public static void main(String[] args) throws IOException {
 		Game g = new Game(13, 13);
@@ -151,6 +152,7 @@ public class Game {
 			board[i][j] = (byte) (!p1Move ? 1 : 2);
 			turn++;
 			check(i, j);
+			lastPass = false;
 			return true;
 		} else {
 			System.out.println("ERROR ILLEGAL MOVE");
@@ -160,8 +162,11 @@ public class Game {
 
 	public void pass() {
 		p1Move ^= true;
-		prev = arrayCopy(board);
 		turn++;
+		if(lastPass)
+			System.out.println("game over");
+		else
+			lastPass = true;
 		
 	}
 
