@@ -18,7 +18,6 @@ public class Game {
 		Scanner scan = new Scanner(System.in);
 		while (true) {
 			g.move(scan.nextInt(), scan.nextInt());
-			System.out.println(g.alive(0, 0, new boolean[13][13]));
 			g.display();
 		}
 	}
@@ -28,28 +27,6 @@ public class Game {
 		turn = 0;
 		prev = new byte[h][w];
 		prev2 = new byte[h][w];
-	}
-
-	public void loadBoard(String filename) throws IOException {
-		Scanner scan = new Scanner(new File(filename));
-		int cnt = 0;
-		while (scan.hasNextByte()) {
-			board[cnt / board[0].length][cnt % board.length] = scan.nextByte();
-			cnt++;
-		}
-
-		scan.close();
-	}
-
-	public byte[][] createCopy(byte[][] ar) {
-		byte[][] ret = new byte[ar.length][ar[0].length];
-		for (int i = 0; i < ar.length; i++) {
-			for (int j = 0; j < ar[0].length; j++) {
-				ret[i][j] = ar[i][j];
-			}
-		}
-
-		return ret;
 	}
 
 	public boolean arrayEquals(byte[][] ar1, byte[][] ar2) {
@@ -64,7 +41,7 @@ public class Game {
 		return true;
 	}
 
-	public boolean ko() {
+	public boolean ko(int i, int j) {
 		if (turn >= 2 && arrayEquals(prev2, board))
 			return true;
 		return false;
@@ -73,8 +50,6 @@ public class Game {
 	public boolean isLegal(int i, int j) {
 		if (board[i][j] != 0)
 			return false;
-		if (ko())
-			return false;
 
 		checked = new boolean[board.length][board[0].length];
 		boolean temp = isDead(i, j);
@@ -82,6 +57,9 @@ public class Game {
 		if (temp) {
 			return false;
 		}
+
+		if (ko(i, j))
+			return false;
 
 		return true;
 	}
@@ -163,9 +141,9 @@ public class Game {
 	public boolean move(int i, int j) {
 		if (isLegal(i, j)) {
 			p1Move ^= true;
-			prev2 = createCopy(prev);
-			prev = createCopy(board);
-			board[i][j] = (byte) (p1Move ? 1 : 2);
+			prev2 = arrayCopy(prev);
+			prev = arrayCopy(board);
+			board[i][j] = (byte) (!p1Move ? 1 : 2);
 			turn++;
 			check(i, j);
 			return true;
@@ -177,15 +155,15 @@ public class Game {
 
 	public void pass() {
 		p1Move ^= true;
-		prev2 = createCopy(prev);
-		prev = createCopy(board);
+		prev2 = arrayCopy(prev);
+		prev = arrayCopy(board);
 		turn++;
 		if (arrayEquals(board, prev2))
 			System.out.println("game over");
 	}
 
 	public boolean isEmpty(int i, int j) {
-		if (i < 0 || i > board.length - 1 || j < 0 || j > board[0].length - 1)
+		if (!withinBounds(i, j))
 			return false;
 		if (board[i][j] == 0)
 			return true;
@@ -212,7 +190,6 @@ public class Game {
 		board[i][j] = (byte) (p1Move ? 1 : 2);
 		boolean temp = alliesAlive(i, j);
 		board[i][j] = 0;
-		System.out.println("alliesAlive:" + temp);
 		if (temp)
 			return false;
 
@@ -234,20 +211,17 @@ public class Game {
 				if (!alive(i - 1, j, new boolean[board.length][board[0].length]))
 					return true;
 		if (withinBounds(i + 1, j))
-			if (board[i + 1][j] == (byte) (!p1Move ? 1 : 2)) 
-				if (!alive(i + 1, j, new boolean[board.length][board[0].length])) 
+			if (board[i + 1][j] == (byte) (!p1Move ? 1 : 2))
+				if (!alive(i + 1, j, new boolean[board.length][board[0].length]))
 					return true;
-				
 		if (withinBounds(i, j + 1))
-			if (board[i][j + 1] == (byte)(!p1Move ? 1:2))
+			if (board[i][j + 1] == (byte) (!p1Move ? 1 : 2))
 				if (!alive(i, j + 1, new boolean[board.length][board[0].length]))
 					return true;
 		if (withinBounds(i, j - 1))
-			if (board[i][j - 1] == (byte)(!p1Move ? 1:2))
+			if (board[i][j - 1] == (byte) (!p1Move ? 1 : 2))
 				if (!alive(i, j - 1, new boolean[board.length][board[0].length]))
 					return true;
-		
-		
 
 		if (withinBounds(i - 1, j))
 			if (board[i - 1][j] == board[i][j])
@@ -268,6 +242,7 @@ public class Game {
 			if (board[i][j + 1] == board[i][j])
 				if (alliesAlive(i, j + 1))
 					return true;
+
 		return false;
 	}
 
@@ -275,6 +250,18 @@ public class Game {
 		if (i < 0 || i > board.length - 1 || j < 0 || j > board[0].length - 1)
 			return false;
 		return true;
+	}
+
+	public void rawDisplay() {
+		System.out.println("----------------------------------------");
+		for (int i = 0; i < board.length; i++) {
+			for (int j = 0; j < board[0].length; j++) {
+				System.out.print(board[i][j] + " ");
+			}
+			System.out.println();
+		}
+		System.out.println("----------------------------------------");
+
 	}
 
 	public void display() {
@@ -298,5 +285,28 @@ public class Game {
 			System.out.println();
 		}
 		System.out.println("----------------------------------------");
+	}
+
+	public void loadBoard(String filename) throws IOException {
+		Scanner scan = new Scanner(new File(filename));
+		int cnt = 0;
+		while (scan.hasNextByte()) {
+			board[cnt / board[0].length][cnt % board.length] = scan.nextByte();
+			cnt++;
+		}
+
+		scan.close();
+		p1Move = true;
+	}
+
+	public byte[][] arrayCopy(byte[][] ar) {
+		byte[][] ret = new byte[ar.length][ar[0].length];
+		for (int i = 0; i < ar.length; i++) {
+			for (int j = 0; j < ar[0].length; j++) {
+				ret[i][j] = ar[i][j];
+			}
+		}
+
+		return ret;
 	}
 }
