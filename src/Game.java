@@ -10,14 +10,15 @@ public class Game {
 	byte[][] prev2;
 	int turn;
 
-	public static void main(String[] args) throws IOException{
+	public static void main(String[] args) throws IOException {
 		Game g = new Game(13, 13);
 		g.loadBoard("in");
-		Scanner scan = new Scanner(System.in);
 		g.display();
 
+		Scanner scan = new Scanner(System.in);
 		while (true) {
 			g.move(scan.nextInt(), scan.nextInt());
+			System.out.println(g.alive(0, 0, new boolean[13][13]));
 			g.display();
 		}
 	}
@@ -36,7 +37,7 @@ public class Game {
 			board[cnt % 13][cnt / 13] = scan.nextByte();
 			cnt++;
 		}
-		
+
 		scan.close();
 	}
 
@@ -70,14 +71,14 @@ public class Game {
 	}
 
 	public boolean isLegal(int i, int j) {
-		checked = new boolean[board.length][board[0].length];
 		if (board[i][j] != 0)
 			return false;
 		if (ko())
 			return false;
+
+		checked = new boolean[board.length][board[0].length];
 		boolean temp = isDead(i, j);
-		System.out.println("isDead:" + temp);
-		board[i][j] = 0;
+
 		if (temp) {
 			return false;
 		}
@@ -133,7 +134,6 @@ public class Game {
 
 	public boolean alive(int i, int j, boolean[][] checked) {
 		if (checked[i][j]) {
-			System.out.println("checked " + i + " " + j);
 			return false;
 		} else
 			checked[i][j] = true;
@@ -157,9 +157,6 @@ public class Game {
 			if (board[i][j + 1] == board[i][j])
 				if (alive(i, j + 1, checked))
 					return true;
-
-		System.out.println("dead " + i + " " + j);
-
 		return false;
 	}
 
@@ -209,21 +206,23 @@ public class Game {
 		if (anyLiberties(i, j))
 			return false;
 
+		if (board[i][j] != 0)
+			return true;
+
 		board[i][j] = (byte) (p1Move ? 1 : 2);
 		boolean temp = alliesAlive(i, j);
+		board[i][j] = 0;
 		System.out.println("alliesAlive:" + temp);
 		if (temp)
 			return false;
 
 		return true;
-
 	}
 
 	public boolean alliesAlive(int i, int j) {
 		if (!withinBounds(i, j))
 			return false;
 		if (checked[i][j]) {
-			System.out.println("checked already");
 			return false;
 		} else
 			checked[i][j] = true;
@@ -231,26 +230,24 @@ public class Game {
 			return true;
 
 		if (withinBounds(i - 1, j))
-			if (board[i - 1][j] != board[i][j] && board[i - 1][j] != 0)
-				if (!alliesAlive(i - 1, j))
+			if (board[i - 1][j] == (byte) (!p1Move ? 1 : 2))
+				if (!alive(i - 1, j, new boolean[board.length][board[0].length]))
 					return true;
-
 		if (withinBounds(i + 1, j))
-			if (board[i + 1][j] != board[i][j] && board[i + 1][j] != 0)
-				if (!alliesAlive(i + 1, j))
+			if (board[i + 1][j] == (byte) (!p1Move ? 1 : 2)) 
+				if (!alive(i + 1, j, new boolean[board.length][board[0].length])) 
 					return true;
-
-		if (withinBounds(i, j + 1)) {
-			if (board[i][j + 1] != board[i][j] && board[i][j + 1] != 0) {
-				if (!alliesAlive(i, j + 1))
+				
+		if (withinBounds(i, j + 1))
+			if (board[i][j + 1] == (byte)(!p1Move ? 1:2))
+				if (!alive(i, j + 1, new boolean[board.length][board[0].length]))
 					return true;
-			}
-		}
-
 		if (withinBounds(i, j - 1))
-			if (board[i][j - 1] != board[i][j] && board[i][j - 1] != 0)
-				if (!alliesAlive(i, j - 1))
+			if (board[i][j - 1] == (byte)(!p1Move ? 1:2))
+				if (!alive(i, j - 1, new boolean[board.length][board[0].length]))
 					return true;
+		
+		
 
 		if (withinBounds(i - 1, j))
 			if (board[i - 1][j] == board[i][j])
@@ -271,7 +268,6 @@ public class Game {
 			if (board[i][j + 1] == board[i][j])
 				if (alliesAlive(i, j + 1))
 					return true;
-		System.out.println("end 'o de line");
 		return false;
 	}
 
