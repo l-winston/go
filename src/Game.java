@@ -1,3 +1,5 @@
+import java.io.File;
+import java.io.IOException;
 import java.util.Scanner;
 
 public class Game {
@@ -8,8 +10,9 @@ public class Game {
 	byte[][] prev2;
 	int turn;
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException{
 		Game g = new Game(13, 13);
+		g.loadBoard("in");
 		Scanner scan = new Scanner(System.in);
 		g.display();
 
@@ -25,7 +28,17 @@ public class Game {
 		prev = new byte[h][w];
 		prev2 = new byte[h][w];
 	}
-	
+
+	public void loadBoard(String filename) throws IOException {
+		Scanner scan = new Scanner(new File(filename));
+		int cnt = 0;
+		while (scan.hasNextByte()) {
+			board[cnt % 13][cnt / 13] = scan.nextByte();
+			cnt++;
+		}
+		
+		scan.close();
+	}
 
 	public byte[][] createCopy(byte[][] ar) {
 		byte[][] ret = new byte[ar.length][ar[0].length];
@@ -153,29 +166,24 @@ public class Game {
 	public boolean move(int i, int j) {
 		if (isLegal(i, j)) {
 			p1Move ^= true;
-			if (turn >= 2) {
-				prev2 = createCopy(prev);
-				prev = createCopy(board);
-			}
+			prev2 = createCopy(prev);
+			prev = createCopy(board);
 			board[i][j] = (byte) (p1Move ? 1 : 2);
 			turn++;
 			check(i, j);
 			return true;
 		} else {
 			System.out.println("ERROR ILLEGAL MOVE");
-			// System.exit(1);
 			return false;
 		}
 	}
-	
-	public void pass(){
+
+	public void pass() {
 		p1Move ^= true;
-		if (turn >= 2) {
-			prev2 = createCopy(prev);
-			prev = createCopy(board);
-		}
-		turn ++;
-		if(arrayEquals(board, prev2))
+		prev2 = createCopy(prev);
+		prev = createCopy(board);
+		turn++;
+		if (arrayEquals(board, prev2))
 			System.out.println("game over");
 	}
 
