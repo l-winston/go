@@ -34,7 +34,7 @@ public class Game {
 		Scanner scan = new Scanner(new File(filename));
 		int cnt = 0;
 		while (scan.hasNextByte()) {
-			board[cnt % 13][cnt / 13] = scan.nextByte();
+			board[cnt / board[0].length][cnt % board.length] = scan.nextByte();
 			cnt++;
 		}
 
