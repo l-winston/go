@@ -9,6 +9,7 @@ public class Game {
 	byte[][] prev;
 	int turn;
 	boolean lastPass = false;
+	boolean inGame = true;
 
 	public static void main(String[] args) throws IOException {
 		Game g = new Game(13, 13);
@@ -26,6 +27,11 @@ public class Game {
 		board = new byte[h][w];
 		turn = 0;
 		prev = new byte[h][w];
+	}
+	
+	public boolean play(Bot p1, Bot p2){
+		
+		return true;
 	}
 
 	public boolean arrayEquals(byte[][] ar1, byte[][] ar2) {
@@ -46,7 +52,7 @@ public class Game {
 		byte[][] save = arrayCopy(board);
 		board[i][j] = (byte) (p1Move ? 1 : 2);
 		check(i, j);
-		if(arrayEquals(prev, board)){
+		if (arrayEquals(prev, board)) {
 			board = save;
 			return true;
 		}
@@ -69,6 +75,10 @@ public class Game {
 			return false;
 
 		return true;
+	}
+	
+	public void score(){
+		
 	}
 
 	public void kill(int i, int j, byte type) {
@@ -156,6 +166,7 @@ public class Game {
 			return true;
 		} else {
 			System.out.println("ERROR ILLEGAL MOVE");
+			score();
 			return false;
 		}
 	}
@@ -163,11 +174,11 @@ public class Game {
 	public void pass() {
 		p1Move ^= true;
 		turn++;
-		if(lastPass)
+		if (lastPass) {
 			System.out.println("game over");
-		else
+			inGame = false;
+		} else
 			lastPass = true;
-		
 	}
 
 	public boolean isEmpty(int i, int j) {
