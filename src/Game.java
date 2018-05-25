@@ -1,5 +1,8 @@
+import java.awt.Point;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Game {
@@ -10,17 +13,81 @@ public class Game {
 	int turn;
 	boolean lastPass = false;
 	boolean inGame = true;
+	boolean p1Win;
 
 	public static void main(String[] args) throws IOException {
-		Game g = new Game(13, 13);
+		Game g = new Game(9, 9);
 		g.loadBoard("in");
 		g.display();
+		
+		Net n = loadNet("out");
 
 		Scanner scan = new Scanner(System.in);
-		while (true) {
+		while (g.inGame) {
 			g.move(scan.nextInt(), scan.nextInt());
+			
+			Move m1 = n.move(g.board);
+			Point loc1 = null;
+			ArrayList<Point> tries1 = new ArrayList<Point>();
+			loop: do {
+				float max = 0;
+				if (tries1.size() > 10) {
+					g.pass();
+					break loop;
+				}
+				for (int i = 0; i < g.board.length; i++) {
+					for (int j = 0; j < g.board[0].length; j++) {
+						if (m1.moves[i][j] > max && !tries1.contains(new Point(i, j))) {
+							max = m1.moves[i][j];
+							loc1 = new Point(i, j);
+						}
+					}
+				}
+				if (m1.pass > max) {
+					g.pass();
+					break loop;
+				} else {
+					tries1.add(loc1);
+				}
+			} while (!g.move(loc1.x, loc1.y));
 			g.display();
 		}
+	}
+	
+	public static Net loadNet(String filename){
+		Scanner scan = null;
+		try{
+			scan = new Scanner(new File(filename));		
+		}catch(FileNotFoundException e){
+			e.printStackTrace();
+		}
+		
+		int[] widths = {81, 100, 150, 100, 82};
+		ArrayList<Matrix> weights = new ArrayList<Matrix>();
+		ArrayList<Matrix> biases = new ArrayList<Matrix>();
+		
+		String s = scan.nextLine();
+		s =scan.nextLine();
+		
+		for(int i = 0; i < widths.length-1; i++){
+			float[][] data = new float[widths[i+1]][widths[i]];
+			for(int j = 0; j < widths[i+1]; j++){
+				for(int k = 0; k < widths[i]; k++){
+					data[j][k] = scan.nextFloat();
+				}
+			}
+			weights.add(new Matrix(data));
+		}
+		
+		for(int i = 0; i < widths.length-1; i++){
+			float[][] data = new float[widths[i+1]][1];
+			for(int j = 0; j < widths[i+1]; j++){
+				data[j][0] = scan.nextFloat();
+			}
+			biases.add(new Matrix(data));
+		}
+		
+		return new Net(widths, weights, biases);
 	}
 
 	public Game(int w, int h) {
@@ -28,10 +95,63 @@ public class Game {
 		turn = 0;
 		prev = new byte[h][w];
 	}
-	
-	public boolean play(Bot p1, Bot p2){
+
+	public boolean play(Bot p1, Bot p2) {
+		while (inGame) {
+			Move m1 = p1.move(board);
+			Point loc1 = null;
+			ArrayList<Point> tries1 = new ArrayList<Point>();
+			loop: do {
+				float max = 0;
+				if (tries1.size() > 10) {
+					pass();
+					break loop;
+				}
+				for (int i = 0; i < board.length; i++) {
+					for (int j = 0; j < board[0].length; j++) {
+						if (m1.moves[i][j] > max && !tries1.contains(new Point(i, j))) {
+							max = m1.moves[i][j];
+							loc1 = new Point(i, j);
+						}
+					}
+				}
+				if (m1.pass > max) {
+					pass();
+					break loop;
+				} else {
+					tries1.add(loc1);
+				}
+			} while (!move(loc1.x, loc1.y));
+			
+			
+			
+			Move m2 = p2.move(board);
+			Point loc2 = null;
+			ArrayList<Point> tries2 = new ArrayList<Point>();
+			loop: do {
+				float max = 0;
+				if (tries2.size() > 10) {
+					pass();
+					break loop;
+				}
+				for (int i = 0; i < board.length; i++) {
+					for (int j = 0; j < board[0].length; j++) {
+						if (m1.moves[i][j] > max && !tries2.contains(new Point(i, j))) {
+							max = m1.moves[i][j];
+							loc2 = new Point(i, j);
+						}
+					}
+				}
+				if (m1.pass > max) {
+					pass();
+					break loop;
+				} else {
+					tries2.add(loc2);
+				}
+			} while (!move(loc2.x, loc2.y));
+		}
 		
-		return true;
+		return p1Win;
 	}
 
 	public boolean arrayEquals(byte[][] ar1, byte[][] ar2) {
@@ -76,9 +196,23 @@ public class Game {
 
 		return true;
 	}
-	
-	public void score(){
+
+	public void score() {
+		int p1 = 0;
+		int p2 = 0;
+		for(int i = 0; i < board.length; i++){
+			for(int j = 0; j < board[0].length; j++){
+				if(board[i][j] == 1)
+					p1++;
+				if(board[i][j] == 2)
+					p2++;
+			}
+		}
 		
+		if(p1 >= p2)
+			p1Win = true;
+		else
+			p1Win = false;
 	}
 
 	public void kill(int i, int j, byte type) {
@@ -165,8 +299,7 @@ public class Game {
 			lastPass = false;
 			return true;
 		} else {
-			System.out.println("ERROR ILLEGAL MOVE");
-			score();
+			//System.out.println("ERROR ILLEGAL MOVE");
 			return false;
 		}
 	}
@@ -175,8 +308,9 @@ public class Game {
 		p1Move ^= true;
 		turn++;
 		if (lastPass) {
-			System.out.println("game over");
+			//System.out.println("game over");
 			inGame = false;
+			score();
 		} else
 			lastPass = true;
 	}
