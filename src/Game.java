@@ -3,6 +3,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Scanner;
 
 public class Game {
@@ -19,74 +21,77 @@ public class Game {
 		Game g = new Game(9, 9);
 		g.loadBoard("in");
 		g.display();
-		
-		Net n = loadNet("out");
+
+		Net bot = loadNet("out");
+		bot = new Net(new int[] {81, 100, 150, 100, 82});
 
 		Scanner scan = new Scanner(System.in);
 		while (g.inGame) {
-			g.move(scan.nextInt(), scan.nextInt());
+			while (!g.move(scan.nextInt(), scan.nextInt())) {
+			}
+
+			MoveSet moveset = bot.move(g.board);
+			ArrayList<Move> moves = new ArrayList<Move>();
+			for(int i = 0;i < moveset.moves.length; i++){
+				for(int j= 0; j < moveset.moves[0].length; j++){
+					moves.add(new Move(i, j, moveset.moves[i][j]));
+				}
+			}
+			moves.add(new Move(-1, -1, moveset.pass));
 			
-			Move m1 = n.move(g.board);
-			Point loc1 = null;
-			ArrayList<Point> tries1 = new ArrayList<Point>();
-			loop: do {
-				float max = 0;
-				if (tries1.size() > 10) {
+			Collections.sort(moves, new Comparator<Move>() {
+				@Override
+				public int compare(Move o1, Move o2) {
+					return o1.val > o2.val ? -1 : o1.val < o2.val ? 1 : 0;
+				}
+			});
+			
+			Move best = null;
+			do{
+				best = moves.remove(0);
+				if(best.i < 0){
 					g.pass();
-					break loop;
+					break;
 				}
-				for (int i = 0; i < g.board.length; i++) {
-					for (int j = 0; j < g.board[0].length; j++) {
-						if (m1.moves[i][j] > max && !tries1.contains(new Point(i, j))) {
-							max = m1.moves[i][j];
-							loc1 = new Point(i, j);
-						}
-					}
-				}
-				if (m1.pass > max) {
-					g.pass();
-					break loop;
-				} else {
-					tries1.add(loc1);
-				}
-			} while (!g.move(loc1.x, loc1.y));
+			}while(!g.move(best.i, best.j));
+			
 			g.display();
 		}
 	}
-	
-	public static Net loadNet(String filename){
+
+	public static Net loadNet(String filename) {
 		Scanner scan = null;
-		try{
-			scan = new Scanner(new File(filename));		
-		}catch(FileNotFoundException e){
+		try {
+			scan = new Scanner(new File(filename));
+		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		
-		int[] widths = {81, 100, 150, 100, 82};
+
+		int[] widths = { 81, 100, 150, 100, 82 };
 		ArrayList<Matrix> weights = new ArrayList<Matrix>();
 		ArrayList<Matrix> biases = new ArrayList<Matrix>();
-		
+
 		String s = scan.nextLine();
-		s =scan.nextLine();
-		
-		for(int i = 0; i < widths.length-1; i++){
-			float[][] data = new float[widths[i+1]][widths[i]];
-			for(int j = 0; j < widths[i+1]; j++){
-				for(int k = 0; k < widths[i]; k++){
+		s = scan.nextLine();
+
+		for (int i = 0; i < widths.length - 1; i++) {
+			float[][] data = new float[widths[i + 1]][widths[i]];
+			for (int j = 0; j < widths[i + 1]; j++) {
+				for (int k = 0; k < widths[i]; k++) {
 					data[j][k] = scan.nextFloat();
 				}
 			}
 			weights.add(new Matrix(data));
 		}
-		
-		for(int i = 0; i < widths.length-1; i++){
-			float[][] data = new float[widths[i+1]][1];
-			for(int j = 0; j < widths[i+1]; j++){
+
+		for (int i = 0; i < widths.length - 1; i++) {
+			float[][] data = new float[widths[i + 1]][1];
+			for (int j = 0; j < widths[i + 1]; j++) {
 				data[j][0] = scan.nextFloat();
 			}
 			biases.add(new Matrix(data));
 		}
-		
+
 		return new Net(widths, weights, biases);
 	}
 
@@ -98,59 +103,59 @@ public class Game {
 
 	public boolean play(Bot p1, Bot p2) {
 		while (inGame) {
-			Move m1 = p1.move(board);
-			Point loc1 = null;
-			ArrayList<Point> tries1 = new ArrayList<Point>();
-			loop: do {
-				float max = 0;
-				if (tries1.size() > 10) {
+			MoveSet moveset = p1.move(board);
+			ArrayList<Move> moves = new ArrayList<Move>();
+			for(int i = 0;i < moveset.moves.length; i++){
+				for(int j= 0; j < moveset.moves[0].length; j++){
+					moves.add(new Move(i, j, moveset.moves[i][j]));
+				}
+			}
+			moves.add(new Move(-1, -1, moveset.pass));
+			
+			Collections.sort(moves, new Comparator<Move>() {
+				@Override
+				public int compare(Move o1, Move o2) {
+					return o1.val > o2.val ? -1 : o1.val < o2.val ? 1 : 0;
+				}
+			});
+			
+			Move best = null;
+			do{
+				best = moves.remove(0);
+				if(best.i < 0){
 					pass();
-					break loop;
+					break;
 				}
-				for (int i = 0; i < board.length; i++) {
-					for (int j = 0; j < board[0].length; j++) {
-						if (m1.moves[i][j] > max && !tries1.contains(new Point(i, j))) {
-							max = m1.moves[i][j];
-							loc1 = new Point(i, j);
-						}
-					}
-				}
-				if (m1.pass > max) {
-					pass();
-					break loop;
-				} else {
-					tries1.add(loc1);
-				}
-			} while (!move(loc1.x, loc1.y));
+			}while(!move(best.i, best.j));
 			
 			
+
+			MoveSet moveset2 = p2.move(board);
+			ArrayList<Move> moves2 = new ArrayList<Move>();
+			for(int i = 0;i < moveset2.moves.length; i++){
+				for(int j= 0; j < moveset2.moves[0].length; j++){
+					moves2.add(new Move(i, j, moveset2.moves[i][j]));
+				}
+			}
+			moves2.add(new Move(-1, -1, moveset2.pass));
 			
-			Move m2 = p2.move(board);
-			Point loc2 = null;
-			ArrayList<Point> tries2 = new ArrayList<Point>();
-			loop: do {
-				float max = 0;
-				if (tries2.size() > 10) {
+			Collections.sort(moves2, new Comparator<Move>() {
+				@Override
+				public int compare(Move o1, Move o2) {
+					return o1.val > o2.val ? -1 : o1.val < o2.val ? 1 : 0;
+				}
+			});
+			
+			Move best2 = null;
+			do{
+				best2 = moves2.remove(0);
+				if(best2.i < 0){
 					pass();
-					break loop;
+					break;
 				}
-				for (int i = 0; i < board.length; i++) {
-					for (int j = 0; j < board[0].length; j++) {
-						if (m1.moves[i][j] > max && !tries2.contains(new Point(i, j))) {
-							max = m1.moves[i][j];
-							loc2 = new Point(i, j);
-						}
-					}
-				}
-				if (m1.pass > max) {
-					pass();
-					break loop;
-				} else {
-					tries2.add(loc2);
-				}
-			} while (!move(loc2.x, loc2.y));
+			}while(!move(best2.i, best2.j));
 		}
-		
+
 		return p1Win;
 	}
 
@@ -181,6 +186,8 @@ public class Game {
 	}
 
 	public boolean isLegal(int i, int j) {
+		if(!withinBounds(i, j))
+			return false;
 		if (board[i][j] != 0)
 			return false;
 
@@ -200,16 +207,16 @@ public class Game {
 	public void score() {
 		int p1 = 0;
 		int p2 = 0;
-		for(int i = 0; i < board.length; i++){
-			for(int j = 0; j < board[0].length; j++){
-				if(board[i][j] == 1)
+		for (int i = 0; i < board.length; i++) {
+			for (int j = 0; j < board[0].length; j++) {
+				if (board[i][j] == 1)
 					p1++;
-				if(board[i][j] == 2)
+				if (board[i][j] == 2)
 					p2++;
 			}
 		}
-		
-		if(p1 >= p2)
+
+		if (p1 >= p2)
 			p1Win = true;
 		else
 			p1Win = false;
@@ -299,7 +306,7 @@ public class Game {
 			lastPass = false;
 			return true;
 		} else {
-			//System.out.println("ERROR ILLEGAL MOVE");
+			// System.out.println("ERROR ILLEGAL MOVE");
 			return false;
 		}
 	}
@@ -308,7 +315,7 @@ public class Game {
 		p1Move ^= true;
 		turn++;
 		if (lastPass) {
-			//System.out.println("game over");
+			// System.out.println("game over");
 			inGame = false;
 			score();
 		} else

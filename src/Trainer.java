@@ -41,6 +41,7 @@ public class Trainer {
 				play(population.get(i), population.get(j));
 			}
 		}
+		
 		Collections.sort(population, new Comparator<Net>() {
 			@Override
 			public int compare(Net o1, Net o2) {
@@ -71,7 +72,7 @@ public class Trainer {
 		for (int i = 0; i < popSize / 2; i++) {
 			Net rand1 = nextGen.get(rand.nextInt(population.size()));
 			Net rand2 = nextGen.get(rand.nextInt(population.size()));
-			breeded.add(new Net(rand1, rand2));
+			breeded.add(Net.cross(rand1,rand2));
 		}
 		nextGen.addAll(breeded);
 

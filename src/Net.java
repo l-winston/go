@@ -32,16 +32,17 @@ public class Net extends Bot{
 		}
 	}
 	
-	public  Net(Net n1, Net n2){
-		widths = n1.widths;
-		score = 0;
-		for(int i = 0; i < widths.length; i++){
-			layers.add(new Matrix(widths[i], 1));
-		}
+	public static Net cross(Net n1, Net n2){
+		int[] widths = n1.widths;
+		ArrayList<Matrix> weights = new ArrayList<Matrix>();
+		ArrayList<Matrix> biases = new ArrayList<Matrix>();
+		
 		for(int i = 0; i < n1.weights.size(); i++){
 			weights.add(n1.weights.get(i).cross(n2.weights.get(i)));
 			biases.add(n1.biases.get(i).cross(n2.biases.get(i)));
 		}
+		
+		return new Net(widths, weights, biases);
 	}
 	
 	public void mutate(){
@@ -49,13 +50,13 @@ public class Net extends Bot{
 			Matrix weight = weights.get(i);
 			Matrix bias = biases.get(i);
 			
-			weights.set(i, weight.mutate(0.5f));
-			biases.set(i, bias.mutate(0.5f));
+			weights.set(i, weight.mutate(0.25f));
+			biases.set(i, bias.mutate(0.25f));
 		}
 	}
 	
 	@Override
-	public Move move(byte[][] board) {
+	public MoveSet move(byte[][] board) {
 		int count = 0;
 		for(int i = 0; i < board.length; i++){
 			for(int j = 0; j < board[0].length; j++){
@@ -78,7 +79,7 @@ public class Net extends Bot{
 		}
 		float pass = lastLayer.get(lastLayer.rows-1, 0);
 		
-		return new Move(out, pass);
+		return new MoveSet(out, pass);
 	}
 	
 	public void print(String filename){
@@ -116,11 +117,21 @@ public class Net extends Bot{
 
 }
 
-class Move{
+class MoveSet{
 	float[][] moves;
 	float pass;
-	public Move(float[][] moves, float pass){
+	public MoveSet(float[][] moves, float pass){
 		this.moves = moves;
 		this.pass = pass;
+	}
+}
+
+class Move{
+	int i, j;
+	float val;
+	public Move(int i, int j, float val){
+		this.i = i;
+		this.j = j;
+		this.val = val;
 	}
 }
